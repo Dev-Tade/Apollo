@@ -240,7 +240,7 @@ APOLLO_DEF HashTable_KVP(type) type##_hashtable_del(HashTable(type) *table, char
     item = table->items[hash];                                                          \
     if (table->items[hash].next == NULL) {                                              \
       table->items[hash].key = NULL;                                                    \
-      table->items[hash].value = 0;                                                     \
+      table->items[hash].value = *(type*)&table->items[hash].next;                      \
     } else {                                                                            \
       HashTable_KVP(type) *collision = table->items[hash].next;                         \
       table->items[hash].key = collision->key;                                          \
