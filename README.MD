@@ -7,3 +7,4 @@ Idea inspired by @PixelRifts aka VoxelRifts.
 2. Filesystem Interface (fsi)
 3. String Views (strview)
 4. Generic Hash Table (hashtable)
+5. Cross Platform Wrapper for Sockets (xwsocks)
