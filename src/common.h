@@ -68,4 +68,45 @@
   #error "Underlying OS is not compilant to neither Windows or Unix"
 #endif
 
+/*
+  -- Macros for overridable functions from C standard lib --
+  They can be overwritten (to a function with the
+  same signature as standard one) by re defining
+  them before including "common.h", for example:
+  #define APOLLO_FREE my_free
+  #include "common.h"
+*/
+
+// -- Memory --
+#include <memory.h>
+#include <stdlib.h>
+
+#ifndef APOLLO_ALLOC
+#define APOLLO_ALLOC malloc 
+#endif
+
+#ifndef APOLLO_REALLOC
+#define APOLLO_REALLOC realloc 
+#endif
+
+#ifndef APOLLO_FREE
+#define APOLLO_FREE free 
+#endif
+
+#ifndef APOLLO_MEMSET
+#define APOLLO_MEMSET memset 
+#endif
+
+#ifndef APOLLO_MEMCPY
+#define APOLLO_MEMCPY memcpy 
+#endif
+
+#ifndef APOLLO_MEMCMP
+#define APOLLO_MEMCMP memcmp 
+#endif
+
+#ifndef APOLLO_MEMMOVE
+#define APOLLO_MEMMOVE memmove 
+#endif
+
 #endif // !APOLLO_COMMON_H
