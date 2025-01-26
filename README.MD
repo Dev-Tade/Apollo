@@ -1,8 +1,12 @@
 # Apollo
-A C codebase that implements different data structures, algorithms, abstractions. 
-Idea inspired by @PixelRifts aka VoxelRifts.
+A C codebase that implements different data structures, 
+algorithms, abstractions, in a STB Style Header.
+Heavily relies on std c runtime, abstracts OS specific.
+
+Idea inspired by @PixelRifts (GitHub) aka @VoxelRifts (Youtube).
 
 ### What is inside the toolbox
+1. Common (used across other headers)
 
 ### TODO:
 1. Arena Allocator (arena)
