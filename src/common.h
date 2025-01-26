@@ -2,6 +2,7 @@
 #define APOLLO_COMMON_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* 
   -- Helper macro to declare header functions --
