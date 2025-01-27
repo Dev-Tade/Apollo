@@ -60,10 +60,12 @@
   #ifndef APOLLO_SYS_UNIX
   #define APOLLO_SYS_WINDOWS
   #endif
+  #include <libloaderapi.h>
 #elif (defined(__unix__) || defined(__unix) || defined(__linux__) || (defined(__APPLE__) && defined(__MACH__)))
   #ifndef APOLLO_SYS_WINDOWS
   #define APOLLO_SYS_UNIX
   #endif
+  #include <dlfnc.h>
 #else
   #error "Underlying OS is not compilant to neither Windows or Unix"
 #endif
