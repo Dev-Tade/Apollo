@@ -1,3 +1,4 @@
+#define ARENA_IMPL
 #include "../src/arena.h"
 
 #include <string.h>

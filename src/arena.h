@@ -69,7 +69,6 @@ APOLLO_DEF size_t arena_used(Arena *pArena);
 
 #endif //!ARENA_H
 
-#define ARENA_IMPL
 #ifdef ARENA_IMPL
 
 #define APOLLO_IMPL
