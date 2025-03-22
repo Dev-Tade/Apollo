@@ -1,7 +1,7 @@
 #ifndef STF_H
 #define STF_H
 
-#include "common.h"
+#include "apollo.h"
 #include <stdio.h>
 
 /*
@@ -144,7 +144,7 @@ APOLLO_DEF void stf_module_list_add(ModuleList *list, Test *test);
 #ifdef STF_IMPL_CLI
 
 #define APOLLO_IMPL
-#include "common.h"
+#include "apollo.h"
 
 /*
   -- Check if file exists --
@@ -427,7 +427,7 @@ APOLLO_DEF uint32_t stf_cli_test(
 #ifdef STF_IMPL_MOD
 
 #define APOLLO_IMPL
-#include "common.h"
+#include "apollo.h"
 
 APOLLO_DEF void stf_module_list_add(ModuleList *list, Test *test)
 {

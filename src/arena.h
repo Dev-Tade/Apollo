@@ -1,7 +1,7 @@
 #ifndef ARENA_H
 #define ARENA_H
 
-#include "common.h"
+#include "apollo.h"
 
 /*
   -- Arena --
@@ -72,7 +72,7 @@ APOLLO_DEF size_t arena_used(Arena *pArena);
 #ifdef ARENA_IMPL
 
 #define APOLLO_IMPL
-#include "common.h"
+#include "apollo.h"
 
 APOLLO_DEF bool arena_init(Arena *pArena, size_t size)
 {

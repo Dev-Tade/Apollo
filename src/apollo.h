@@ -8,13 +8,13 @@
   -- Helper macro to declare header functions --
 
   On definition:
-  #include "common.h"
+  #include "apollo.h"
 
   would define APOLLO_DEF as extern
 
   On an implementation:
   #define APOLLO_IMPL
-  #include "common.h"
+  #include "apollo.h"
 
   would define APOLLO_DEF as static
 
