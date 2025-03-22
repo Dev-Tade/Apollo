@@ -22,32 +22,9 @@
   `test` argument is a pointer to a Test struct
    > Building a Test structure: you can do it by using `TEST` macro with following
    arguments: `TEST(function_name, description, argument)`, `function_name` is the
-   identifier of C function to run (max length 24 characters), `description` is 32
-   characters and argument is a pointer to what you want to pass to the test when
-   its ran. It could be a static, stack or heap allocated object, if you don' t want
-   any just use NULL or 0
-   > What does a `test` return: true if succeeded or false if it didn't,
-  for example something based on a condition:
-   > A very minimal example:
-   `
-     bool test_n1(void *argument)
-     {
-       if ( (*(uint32_t *)argument)  == 1) return true;
-       return false;
-     }
-     bool test_n1(uint32_t argument)
-     {
-       // Cast is not needed since uint32 fits on a pointer on 32/64 bits 
-       if (argument == 0) return true;
-       return false;
-     }
-
-     void stf_module_list(STF_MODULE_LIST)
-     {
-       stf_test_add(MODULE_LIST, TEST(test_n1, "Should return 1 when 1 is feed", 1));
-       stf_test_add(test_list, TEST(test_n2, "Should return 1 when 0 is feed", 0));
-     }
-    `
+   identifier of C function to run (max length 64 characters), `description` is 64
+   characters.
+   > What does a `test` return: true if succeeded or false if it didn't.
 */
 
 /*
@@ -74,9 +51,9 @@ typedef void *Module;
   -- Target Type --
   Type alias to a function pointer with a test signature.
   Every test written should follow that pattern:
-  `bool <test_name>(void *argument)`
+  `bool <test_name>(void)`
 */
-typedef uint32_t (*Target)(void *arg);
+typedef uint32_t (*Target)(void);
 
 /*
   -- Test Entry Type/Struct --
@@ -84,9 +61,8 @@ typedef uint32_t (*Target)(void *arg);
 */
 typedef struct _stf_test
 {
-  char target_string[24];
-  char target_description[32];
-  void *argument;
+  char target_string[64];
+  char target_description[64];
 } Test;
 
 /*
@@ -98,8 +74,8 @@ typedef struct _stf_test
 /*
   -- Helper macro to build a Test Case --
 */
-#define TEST(function, description, argument) (\
-  &(Test){__FN_STR__(function), description, argument}\
+#define TEST(function, description) (\
+  &(Test){__FN_STR__(function), description}\
 )
 
 /*
@@ -143,6 +119,14 @@ APOLLO_DEF void stf_test_add(Test_List *list, Test *test);
 
 #define APOLLO_IMPL
 #include "apollo.h"
+
+/*
+  -- ModuleEntryPoint Type --
+  Type alias to a function pointer with a stf_module_list signature.
+  Every test file should have that entry point:
+  `void stf_module_list(MODULE_LIST)`
+*/
+typedef void (*ModuleEntryPoint)(Test_List *);
 
 /*
   -- Load a module --
@@ -301,7 +285,7 @@ APOLLO_DEF Target stf_module_target(Module module, const char *target, bool quie
 APOLLO_DEF bool stf_module_load_test_list(const char *stf_target, Module module, Test_List *test_list)
 {
   // Checking for NULL module should be done by caller
-  Target stf_module_list_entry = stf_module_target(module, "stf_module_list", true);
+  ModuleEntryPoint stf_module_list_entry = (ModuleEntryPoint)stf_module_target(module, "stf_module_list", true);
   
   if (!stf_module_list_entry) {
     stf_err(
@@ -371,7 +355,7 @@ APOLLO_DEF bool stf_cli_all(const char *stf_exec, const char *stf_target)
   }
 
   stf_log(
-    "[INFO]: Executed %zu tests, only %zu succeeded (%d%%)\n",
+    "[INFO]: Executed %zu tests, %zu succeeded (%d%%)\n",
     exec_count,
     succeeded_count,
     succeeded_count * 100 / exec_count
@@ -413,7 +397,7 @@ APOLLO_DEF bool stf_cli_test(
         test->target_string, stf_target, test->target_description
       );
 
-      bool succeeded = target(test->argument);
+      bool succeeded = target();
 
       stf_log(
         "[INFO]: Finished case: \"%s\" (from \"%s\") -- %s (%s) --\n",
