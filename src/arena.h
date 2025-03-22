@@ -96,7 +96,7 @@ APOLLO_DEF void arena_free(Arena *arena)
 APOLLO_DEF void *arena_reserve(Arena *arena, size_t count)
 {
   if (!arena) return NULL;
-  if ((arena->ptr + count) >= arena->end) return NULL;
+  if ((arena->ptr + count) > arena->end) return NULL;
 
   void *ret = (void *)((uintptr_t)arena->base + arena->ptr);
   arena->ptr += count;
