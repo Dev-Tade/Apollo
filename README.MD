@@ -11,8 +11,6 @@ Idea inspired by @PixelRifts (GitHub) aka @VoxelRifts (Youtube).
 3. Arena Allocator (arena)
 
 ### TODO:
-* Better logging for STF
-* Better tests (Rewrite test for STF)
 * String Views
 * Filesystem Interface
 * Generic Linked List
@@ -31,70 +29,62 @@ A self contained testing framework
 gcc ./tests/stf.c -o stf
 ```
 * Building a test:
-```c
-// TODO: Make better example of STF test module
-// tests/stf_module.c
-#define STF_IMPL_MOD
-#include "stf.h"
-
-uint32_t test(void *arg) {
-  printf("%p\n", arg);
-
-  return STF_SUCCESS;
-}
-
-uint32_t stf_module_list(void *_module_list)
-{
-  ModuleList *this = MODULE_LIST_ARGUMENT(_module_list);
-  stf_module_list_add(this, TEST(not_implemented_test, "A test with no implementation", NULL));
-  stf_module_list_add(this, TEST(test, "test", NULL));
-
-  return STF_SUCCESS;
-}
-```
+[Arena test written in STF](./tests/arena.c)
 ```sh
-gcc ./tests/stf_module.c -shared -fPIC -o stf_module.dll
+gcc ./tests/arena.c -shared -fPIC -o stf_arena.dll
 ```
 * Using the CLI:
 1. List all tests avilable in module
 ```sh
-stf ./stf_module.dll list
+stf ./stf_arena.dll list
 ```
 ```txt  
-[TEST]: "not_implemented_test" -- A test with no implementation --
-[TEST]: "test" -- test --
+[TEST]: "arena_init_test" -- inits an arena --
+[TEST]: "arena_reserve_test" -- inits an arena, allocates a u64 and string of 64 chars --
+[TEST]: "arena_remaining_test" -- inits an arena, reports it remaining space --
+[TEST]: "arena_used_test" -- inits an arena, reports it used space --
+[TEST]: "arena_reserve_no_space_left" -- tries to allocate but runs out of space --
+[TEST]: "arena_reserve_null_arena" -- tries to allocate on an invalid arena --
 ```
-2. A non implemented test:
+2. Running a single test in a module:
 ```sh
-stf ./stf_module.dll not_implemented_test
+stf ./stf_arena.dll arena_init_test
 ```
 ```txt
-[CMD]: stf ./stf_module.dll not_implemented_test
-[ERROR]: Unable to load target "not_implemented_test" from a module
-[ERROR]: module "./stf_module.dll" registers "not_implemented_test" test, but doesn't implement it
-[TEST]: Module: "./stf_module.dll" Test: "not_implemented_test" Result: 1
+[INFO]: Executing case: "arena_init_test" (from ".\stf_arena.dll") -- inits an arena --
+[INFO]: Finished case: "arena_init_test" (from ".\stf_arena.dll") -- succeeded (true) --
 ```
-3. An implemented test:
+3. Running all tests in a module:
 ```sh
-stf ./stf_module.dll test
+stf ./stf_arena.dll all
 ```
 ```txt
-[CMD]: stf ./stf_module.dll test
-0000000000000000
-[TEST]: Module: "./stf_module.dll" Test: "test" Result: 0
+[INFO]: Executing case: "arena_init_test" (from ".\stf_arena.dll") -- inits an arena --
+[INFO]: Finished case: "arena_init_test" (from ".\stf_arena.dll") -- succeeded (true) --
+
+[INFO]: Executing case: "arena_reserve_test" (from ".\stf_arena.dll") -- inits an arena, allocates a u64 and string of 64 chars --
+initializing an arena of 72 bytes
+my_u64: 0000026ECD1BF7A0 -> 13907095937837018880
+my_string: 0000026ECD1BF7A8 -> coffee is good_af
+[INFO]: Finished case: "arena_reserve_test" (from ".\stf_arena.dll") -- succeeded (true) --
+
+[INFO]: Executing case: "arena_remaining_test" (from ".\stf_arena.dll") -- inits an arena, reports it remaining space --
+there are 16 bytes are left on the arena
+allocating some memory
+there are 4 bytes are left on the arena
+[INFO]: Finished case: "arena_remaining_test" (from ".\stf_arena.dll") -- succeeded (true) --
+
+[INFO]: Executing case: "arena_used_test" (from ".\stf_arena.dll") -- inits an arena, reports it used space --
+there are 0 used bytes on the arena
+allocating some memory
+there are 12 used bytes on the arena
+[INFO]: Finished case: "arena_used_test" (from ".\stf_arena.dll") -- succeeded (true) --
+
+[INFO]: Executing case: "arena_reserve_no_space_left" (from ".\stf_arena.dll") -- tries to allocate but runs out of space --
+[INFO]: Finished case: "arena_reserve_no_space_left" (from ".\stf_arena.dll") -- succeeded (true) --
+
+[INFO]: Executing case: "arena_reserve_null_arena" (from ".\stf_arena.dll") -- tries to allocate on an invalid arena --
+[INFO]: Finished case: "arena_reserve_null_arena" (from ".\stf_arena.dll") -- succeeded (true) --
+
+[INFO]: Executed 6 tests, 6 succeeded (100%)
 ```
-4. Running all tests in a module:
-```sh
-stf ./stf_module.dll all
-```
-```txt
-[CMD]: stf ./stf_module.dll not_implemented_test
-[ERROR]: Unable to load target "not_implemented_test" from a module
-[ERROR]: module "./stf_module.dll" registers "not_implemented_test" test, but doesn't implement it
-[TEST]: Module: "./stf_module.dll" Test: "not_implemented_test" Result: 1
-[CMD]: stf ./stf_module.dll test
-0000000000000000
-[TEST]: Module: "./stf_module.dll" Test: "test" Result: 0
-[TEST] 2 tests executed
-```
-#### STF is mostly implemented, theres only the need for better logging and better test modules examples, you can check out stf.h for more info
