@@ -76,10 +76,10 @@ APOLLO_DEF size_t arena_used(Arena *arena);
 
 APOLLO_DEF bool arena_init(Arena *arena, size_t size)
 {
-  if (arena == NULL) return false;
+  if (!arena) return false;
 
   arena->base = APOLLO_ALLOC(size);
-  if (arena->base == NULL) return false;
+  if (!arena->base) return false;
 
   APOLLO_MEMSET(arena->base, 0, arena->end);
   arena->end = size;
@@ -95,7 +95,7 @@ APOLLO_DEF void arena_free(Arena *arena)
 
 APOLLO_DEF void *arena_reserve(Arena *arena, size_t count)
 {
-  if (arena == NULL) return NULL;
+  if (!arena) return NULL;
   if ((arena->ptr + count) >= arena->end) return NULL;
 
   void *ret = (void *)((uintptr_t)arena->base + arena->ptr);
@@ -106,14 +106,14 @@ APOLLO_DEF void *arena_reserve(Arena *arena, size_t count)
 
 APOLLO_DEF size_t arena_left(Arena *arena)
 {
-  if (arena == NULL) return 0;
+  if (!arena) return 0;
   
   return (arena->end - arena->ptr);
 }
 
 APOLLO_DEF size_t arena_used(Arena *arena)
 {
-  if (arena == NULL) return 0;
+  if (!arena) return 0;
 
   return (arena->ptr);
 }
