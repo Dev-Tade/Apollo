@@ -3,17 +3,21 @@
 #define STF_IMPL_MOD
 #include "../src/stf.h"
 
-uint32_t test(void *arg) {
+bool test(void *arg)
+{
   printf("%p\n", arg);
 
-  return STF_SUCCESS;
+  return true;
 }
 
-uint32_t stf_module_list(void *_module_list)
+bool foo(void *arg)
 {
-  ModuleList *this = MODULE_LIST_ARGUMENT(_module_list);
-  stf_module_list_add(this, TEST(not_implemented_test, "A test with no implementation", NULL));
-  stf_module_list_add(this, TEST(test, "test", NULL));
+  return (2 + 2) == 4;
+}
 
-  return STF_SUCCESS;
+void stf_module_list(STF_MODULE_LIST)
+{
+  stf_test_add(MODULE_LIST, TEST(not_implemented_test, "A test with no implementation", NULL));
+  stf_test_add(MODULE_LIST, TEST(test, "test", NULL));
+  stf_test_add(MODULE_LIST, TEST(foo, "checks if 2 + 2 is 4", NULL));
 }
