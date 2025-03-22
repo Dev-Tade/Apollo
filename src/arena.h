@@ -28,44 +28,44 @@ typedef struct _Arena
 
 /*
   -- Initialize memory for the Arena --
-  @param pArena: Pointer to an arena.
+  @param arena: Pointer to an Arena.
   @param size: Amount of bytes for the arena.
   @return `false`: On init failed
-  (NULL pArena or Failed to allocate).
+  (NULL arena or failed to allocate).
 */
-APOLLO_DEF bool arena_init(Arena *pArena, size_t size);
+APOLLO_DEF bool arena_init(Arena *arena, size_t size);
 
 /*
   -- Deallocate memory of the Arena --
-  @param pArena: Pointer to an arena.
+  @param arena: Pointer to an Arena.
 */
-APOLLO_DEF void arena_free(Arena *pArena);
+APOLLO_DEF void arena_free(Arena *arena);
 
 /*
   -- Get memory from the Arena --
-  @param pArena: Pointer to an Arena
+  @param arena: Pointer to an Arena
   @param count: Amount of bytes to reserve
   @return `pointer` to block of reserved memory,
   NULL if no more space is avilable in the Arena
-  or NULL pArena
+  or NULL arena
 */
-APOLLO_DEF void *arena_reserve(Arena *pArena, size_t count);
+APOLLO_DEF void *arena_reserve(Arena *arena, size_t count);
 
 /*
   -- Get memory left in the Arena --
-  @param pArena: Pointer to an Arena
+  @param arena: Pointer to an Arena
   @return `Number` of bytes left in arena,
   zero if Arena is NULL
 */
-APOLLO_DEF size_t arena_left(Arena *pArena);
+APOLLO_DEF size_t arena_left(Arena *arena);
 
 /*
   -- Get memory used in the Arena --
-  @param pArena: Pointer to an Arena
+  @param arena: Pointer to an Arena
   @return `Number` of bytes used in arena,
   zero if Arena is NULL
 */
-APOLLO_DEF size_t arena_used(Arena *pArena);
+APOLLO_DEF size_t arena_used(Arena *arena);
 
 #endif //!ARENA_H
 
@@ -74,48 +74,48 @@ APOLLO_DEF size_t arena_used(Arena *pArena);
 #define APOLLO_IMPL
 #include "apollo.h"
 
-APOLLO_DEF bool arena_init(Arena *pArena, size_t size)
+APOLLO_DEF bool arena_init(Arena *arena, size_t size)
 {
-  if (pArena == NULL) return false;
+  if (arena == NULL) return false;
 
-  pArena->base = APOLLO_ALLOC(size);
-  if (pArena->base == NULL) return false;
+  arena->base = APOLLO_ALLOC(size);
+  if (arena->base == NULL) return false;
 
-  APOLLO_MEMSET(pArena->base, 0, pArena->end);
-  pArena->end = size;
-  pArena->ptr = 0;
+  APOLLO_MEMSET(arena->base, 0, arena->end);
+  arena->end = size;
+  arena->ptr = 0;
 
   return true;
 }
 
-APOLLO_DEF void arena_free(Arena *pArena)
+APOLLO_DEF void arena_free(Arena *arena)
 {
-  APOLLO_FREE(pArena->base);
+  APOLLO_FREE(arena->base);
 }
 
-APOLLO_DEF void *arena_reserve(Arena *pArena, size_t count)
+APOLLO_DEF void *arena_reserve(Arena *arena, size_t count)
 {
-  if (pArena == NULL) return NULL;
-  if ((pArena->ptr + count) >= pArena->end) return NULL;
+  if (arena == NULL) return NULL;
+  if ((arena->ptr + count) >= arena->end) return NULL;
 
-  void *ret = (void *)((uintptr_t)pArena->base + pArena->ptr);
-  pArena->ptr += count;
+  void *ret = (void *)((uintptr_t)arena->base + arena->ptr);
+  arena->ptr += count;
 
   return ret;
 }
 
-APOLLO_DEF size_t arena_left(Arena *pArena)
+APOLLO_DEF size_t arena_left(Arena *arena)
 {
-  if (pArena == NULL) return 0;
+  if (arena == NULL) return 0;
   
-  return (pArena->end - pArena->ptr);
+  return (arena->end - arena->ptr);
 }
 
-APOLLO_DEF size_t arena_used(Arena *pArena)
+APOLLO_DEF size_t arena_used(Arena *arena)
 {
-  if (pArena == NULL) return 0;
+  if (arena == NULL) return 0;
 
-  return (pArena->ptr);
+  return (arena->ptr);
 }
 
 #endif //!ARENA_IMPL
