@@ -120,6 +120,16 @@ APOLLO_DEF uint64_t stringview_to_u64(const StringView *sv);
 */
 APOLLO_DEF char *stringview_to_cstr(const StringView *sv);
 
+/*
+  -- Copy string view into a buffer and append null terminator --
+  @param sv: Pointer to input string view
+  @param buff: Output buffer
+  @param size: Maximum size of the output buffer
+  @return 'true' on when data is copied, 
+  'false' when no data is copied
+*/
+APOLLO_DEF bool string_view_into_buff(const StringView *sv, char buff[], size_t size);
+
 #endif //!STRINGVIEW_H
 
 #define STRINGVIEW_IMPL
@@ -219,6 +229,7 @@ APOLLO_DEF void stringview_next(StringView *sv)
 
 APOLLO_DEF char stringview_getc(const StringView *sv)
 {
+  if (sv->size <= 0) return '\0';
   return *sv->data;
 }
 
@@ -277,6 +288,8 @@ APOLLO_DEF uint64_t stringview_to_u64(const StringView *sv)
 
 APOLLO_DEF char *stringview_to_cstr(const StringView *sv)
 {
+  if (sv->size <= 0) return NULL;
+
   char *cstr = APOLLO_ALLOC(sv->size + 1);
   if (cstr == NULL) return NULL;
 
@@ -284,6 +297,15 @@ APOLLO_DEF char *stringview_to_cstr(const StringView *sv)
   cstr[sv->size] = '\0';
 
   return cstr;
+}
+
+APOLLO_DEF bool string_view_into_buff(const StringView *sv, char buff[], size_t size)
+{
+  if (sv->size <= 0 || sv->size >= size) return false;
+  APOLLO_MEMCPY(buff, sv->data, sv->size);
+  buff[sv->size] = '\0';
+  
+  return true;
 }
 
 

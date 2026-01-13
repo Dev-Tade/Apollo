@@ -15,6 +15,7 @@ void stf_module_list(stf_Tests *tests)
   stf_register_test(tests, STF_TEST_CASE(getchar_stringview_from_left, "Get a character from left side of a stringview"));
   stf_register_test(tests, STF_TEST_CASE(convert_stringview_to_number, "Convert a stringview to a number"));
   stf_register_test(tests, STF_TEST_CASE(convert_stringview_to_cstr, "Convert a stringview to a C string"));
+  stf_register_test(tests, STF_TEST_CASE(copy_stringview_into_buffer, "Copy a stringview contents into a sized buffer"));
 }
 
 const char *test_string = "Hello StringViews";
@@ -165,4 +166,21 @@ bool convert_stringview_to_cstr(void)
   APOLLO_FREE(to);
   
   return (memcmp_res == 0) && (size == to_size);
+}
+
+bool copy_stringview_into_buffer(void)
+{
+  StringView sv = stringview_from_cstr("Hello World!");
+  char buff[16] = {0};
+  bool copy_invalid_size = string_view_into_buff(&sv, buff, 8);
+  bool copy_valid_size = string_view_into_buff(&sv, buff, 16);
+  int memcmp_res = APOLLO_MEMCMP(sv.data, buff, sv.size);
+
+  printf("base = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(sv));
+  printf("copy = %s\n", buff);
+
+  return 
+    (copy_invalid_size == false) &&
+    (copy_valid_size == true) &&
+    (memcmp_res == 0);
 }
