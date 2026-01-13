@@ -60,6 +60,7 @@
   #ifndef APOLLO_SYS_UNIX
   #define APOLLO_SYS_WINDOWS
   #endif
+  #define WIN32_LEAN_AND_MEAN
   #include <libloaderapi.h>
 #elif (defined(__unix__) || defined(__unix) || defined(__linux__) || (defined(__APPLE__) && defined(__MACH__)))
   #ifndef APOLLO_SYS_WINDOWS
