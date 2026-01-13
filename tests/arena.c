@@ -7,14 +7,14 @@
 #include <string.h>
 #include <stdio.h>
 
-void stf_module_list(STF_MODULE_LIST)
+void stf_module_list(stf_Tests *tests)
 {
-  stf_test_add(MODULE_LIST, TEST(arena_init_test, "inits an arena"));
-  stf_test_add(MODULE_LIST, TEST(arena_reserve_test, "inits an arena, allocates a u64 and string of 64 chars"));
-  stf_test_add(MODULE_LIST, TEST(arena_remaining_test, "inits an arena, reports it remaining space"));
-  stf_test_add(MODULE_LIST, TEST(arena_used_test, "inits an arena, reports it used space"));
-  stf_test_add(MODULE_LIST, TEST(arena_reserve_no_space_left, "tries to allocate but runs out of space"));
-  stf_test_add(MODULE_LIST, TEST(arena_reserve_null_arena, "tries to allocate on an invalid arena"));
+  stf_register_test(tests, STF_TEST_CASE(arena_init_test, "inits an arena"));
+  stf_register_test(tests, STF_TEST_CASE(arena_reserve_test, "inits an arena, allocates a u64 and string of 64 chars"));
+  stf_register_test(tests, STF_TEST_CASE(arena_remaining_test, "inits an arena, reports it remaining space"));
+  stf_register_test(tests, STF_TEST_CASE(arena_used_test, "inits an arena, reports it used space"));
+  stf_register_test(tests, STF_TEST_CASE(arena_reserve_no_space_left, "tries to allocate but runs out of space"));
+  stf_register_test(tests, STF_TEST_CASE(arena_reserve_null_arena, "tries to allocate on an invalid arena"));
 }
 
 static Arena test_arena;
