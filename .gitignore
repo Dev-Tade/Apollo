@@ -1,3 +1,7 @@
 .vscode
 *.exe
 *.dll
+*.bat
+*.sh
+*.ps1
+*.ps
