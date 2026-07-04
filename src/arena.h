@@ -39,7 +39,7 @@ APOLLO_DEF bool arena_init(Arena *arena, size_t size);
   -- Deallocate memory of the Arena --
   @param arena: Pointer to an Arena.
 */
-APOLLO_DEF void arena_free(Arena *arena);
+APOLLO_DEF void arena_release(Arena *arena);
 
 /*
   -- Get memory from the Arena --
@@ -49,7 +49,7 @@ APOLLO_DEF void arena_free(Arena *arena);
   NULL if no more space is avilable in the Arena
   or NULL arena
 */
-APOLLO_DEF void *arena_reserve(Arena *arena, size_t count);
+APOLLO_DEF void *arena_alloc(Arena *arena, size_t count);
 
 /*
   -- Get memory left in the Arena --
@@ -81,19 +81,19 @@ APOLLO_DEF bool arena_init(Arena *arena, size_t size)
   arena->base = APOLLO_ALLOC(size);
   if (!arena->base) return false;
 
-  APOLLO_MEMSET(arena->base, 0, arena->end);
   arena->end = size;
   arena->ptr = 0;
+  APOLLO_MEMSET(arena->base, 0, arena->end);
 
   return true;
 }
 
-APOLLO_DEF void arena_free(Arena *arena)
+APOLLO_DEF void arena_release(Arena *arena)
 {
   APOLLO_FREE(arena->base);
 }
 
-APOLLO_DEF void *arena_reserve(Arena *arena, size_t count)
+APOLLO_DEF void *arena_alloc(Arena *arena, size_t count)
 {
   if (!arena) return NULL;
   if ((arena->ptr + count) > arena->end) return NULL;

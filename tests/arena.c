@@ -10,11 +10,11 @@
 void stf_module_list(stf_Tests *tests)
 {
   stf_register_test(tests, STF_TEST_CASE(arena_init_test, "inits an arena"));
-  stf_register_test(tests, STF_TEST_CASE(arena_reserve_test, "inits an arena, allocates a u64 and string of 64 chars"));
+  stf_register_test(tests, STF_TEST_CASE(arena_alloc_test, "inits an arena, allocates a u64 and string of 64 chars"));
   stf_register_test(tests, STF_TEST_CASE(arena_remaining_test, "inits an arena, reports it remaining space"));
   stf_register_test(tests, STF_TEST_CASE(arena_used_test, "inits an arena, reports it used space"));
-  stf_register_test(tests, STF_TEST_CASE(arena_reserve_no_space_left, "tries to allocate but runs out of space"));
-  stf_register_test(tests, STF_TEST_CASE(arena_reserve_null_arena, "tries to allocate on an invalid arena"));
+  stf_register_test(tests, STF_TEST_CASE(arena_alloc_no_space_left, "tries to allocate but runs out of space"));
+  stf_register_test(tests, STF_TEST_CASE(arena_alloc_null_arena, "tries to allocate on an invalid arena"));
 }
 
 static Arena test_arena;
@@ -24,14 +24,14 @@ bool arena_init_test(void)
   return arena_init(&test_arena, 128);
 }
 
-bool arena_reserve_test(void)
+bool arena_alloc_test(void)
 { 
   size_t arena_size = sizeof(uint64_t) + 64;
   printf("initializing an arena of %zu bytes\n", arena_size);
   arena_init(&test_arena, arena_size);
 
   // Allocate a u64 
-  uint64_t *my_u64 = (uint64_t*)arena_reserve(&test_arena, sizeof(uint64_t));
+  uint64_t *my_u64 = (uint64_t*)arena_alloc(&test_arena, sizeof(uint64_t));
   if (!my_u64) {
     fprintf(stderr, "Couldn't allocate u64\n");
     return false;
@@ -42,7 +42,7 @@ bool arena_reserve_test(void)
 
   // Allocate a string of 64 characters
   size_t my_string_size = 64;
-  char *my_string = (char *)arena_reserve(&test_arena, my_string_size);
+  char *my_string = (char *)arena_alloc(&test_arena, my_string_size);
   if (!my_string) {
     fprintf(stderr, "Couldn't allocate my_string of size %zu\n", my_string_size);
     return false;
@@ -63,7 +63,7 @@ bool arena_remaining_test(void)
   printf("there are %zu bytes are left on the arena\n", remaining_bytes);
 
   printf("allocating some memory\n");
-  arena_reserve(&test_arena, sizeof(uint32_t) * 3);
+  arena_alloc(&test_arena, sizeof(uint32_t) * 3);
 
   remaining_bytes = arena_left(&test_arena);
   printf("there are %zu bytes are left on the arena\n", remaining_bytes);
@@ -80,7 +80,7 @@ bool arena_used_test(void)
   printf("there are %zu used bytes on the arena\n", used_bytes);
 
   printf("allocating some memory\n");
-  arena_reserve(&test_arena, sizeof(uint32_t) * 3);
+  arena_alloc(&test_arena, sizeof(uint32_t) * 3);
 
   used_bytes = arena_used(&test_arena);
   printf("there are %zu used bytes on the arena\n", used_bytes);
@@ -88,13 +88,13 @@ bool arena_used_test(void)
   return used_bytes > 0;
 }
 
-bool arena_reserve_no_space_left(void)
+bool arena_alloc_no_space_left(void)
 {
   arena_init(&test_arena, 16);
-  return !arena_reserve(&test_arena, arena_left(&test_arena) + 20);
+  return !arena_alloc(&test_arena, arena_left(&test_arena) + 20);
 }
 
-bool arena_reserve_null_arena(void)
+bool arena_alloc_null_arena(void)
 {
-  return !arena_reserve(NULL, 20);
+  return !arena_alloc(NULL, 20);
 }
