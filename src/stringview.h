@@ -132,7 +132,6 @@ APOLLO_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t s
 
 #endif //!STRINGVIEW_H
 
-#define STRINGVIEW_IMPL
 #ifdef STRINGVIEW_IMPL
 
 #define APOLLO_IMPL
