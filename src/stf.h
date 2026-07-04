@@ -14,30 +14,25 @@
   > stf <target-file.module> all    -- Run all tests inside target module
   > stf <target-file.module> <test> -- Run <test> from target module
   # Writing Test:
-  > Any test module should include a function called stf_module_list with
-  the following signature `void stf_module_list(stf_Tests *)`
-  > The purpose of `stf_module_list` is register all the test in the module via:
-  stf_register_test(stf_Tests *list, stf_Test *test), its arguments are
-  pretty simple, `list` or any other name, it' the argument passed to
-  `stf_module_list()`, `test` argument is a pointer to a stf_Test struct
-  > Building a Test structure: you can do it by using `TEST` macro with following
-  arguments: `STF_TEST_CASE(function_name, description, argument)`, `function_name` is the
-  identifier of C function to run (max length 64 characters), `description` is 64
-  characters.
+  > Any test module should use the macro STF_MODULE_EXPORTS, passing it an
+  array of stf_Test declared as stf_Test <name>[].
+  Like so: STF_MODULE_EXPORTS(module_name);
+  > The stf_Test[] contains test entries in the written as follows:
+  {"<test_name>", "<test description>", test_function_pointer}
+  <test_name> will be used to execute that specific test from the CLI
+  or displayed along the description when listing.
+  test_function_pointer has the following signature `bool <function_name>(void)`
+  this function is considered a `test`.
   > What does a `test` return?: true if succeeded or false if it didn't.
 */
 
 /*
   -- Helper macro to printf to stderr --
-  @note When no variadic arguments are used, pass zero like so:
-  `stf_err(..., 0)`
 */
 #define stf_err(...) (fprintf(stderr, __VA_ARGS__))
 
 /*
   -- Helper macro to printf to stdout --
-  @note When no variadic arguments are used, pass zero like so:
-  `stf_log(..., 0)`
 */
 #define stf_log(...) (fprintf(stdout, __VA_ARGS__))
 
