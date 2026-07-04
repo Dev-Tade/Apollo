@@ -128,7 +128,7 @@ APOLLO_DEF char *stringview_to_cstr(const StringView *sv);
   @return 'true' on when data is copied, 
   'false' when no data is copied
 */
-APOLLO_DEF bool string_view_into_buff(const StringView *sv, char buff[], size_t size);
+APOLLO_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t size);
 
 #endif //!STRINGVIEW_H
 
@@ -299,7 +299,7 @@ APOLLO_DEF char *stringview_to_cstr(const StringView *sv)
   return cstr;
 }
 
-APOLLO_DEF bool string_view_into_buff(const StringView *sv, char buff[], size_t size)
+APOLLO_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t size)
 {
   if (sv->size <= 0 || sv->size >= size) return false;
   APOLLO_MEMCPY(buff, sv->data, sv->size);

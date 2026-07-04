@@ -158,8 +158,8 @@ bool copy_stringview_into_buffer(void)
 {
   StringView sv = stringview_from_cstr("Hello World!");
   char buff[16] = {0};
-  bool copy_invalid_size = string_view_into_buff(&sv, buff, 8);
-  bool copy_valid_size = string_view_into_buff(&sv, buff, 16);
+  bool copy_invalid_size = stringview_into_buff(&sv, buff, 8);
+  bool copy_valid_size = stringview_into_buff(&sv, buff, 16);
   int memcmp_res = APOLLO_MEMCMP(sv.data, buff, sv.size);
 
   printf("base = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(sv));
