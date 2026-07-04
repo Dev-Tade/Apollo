@@ -66,7 +66,7 @@
   #ifndef APOLLO_SYS_WINDOWS
   #define APOLLO_SYS_UNIX
   #endif
-  #include <dlfnc.h>
+  #include <dlfcn.h>
 #else
   #error "Underlying OS is not compilant to neither Windows or Unix"
 #endif
