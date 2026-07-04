@@ -42,12 +42,6 @@
 #define stf_log(fmt, ...) (fprintf(stdout, fmt, __VA_ARGS__))
 
 /*
-  -- Module Type --
-  Type alias to OS dynamic library / shared object handle
-*/
-typedef void *stf_Module;
-
-/*
   -- Target Type --
   Type alias to a function pointer with a test signature.
   Every test written should follow that pattern:
@@ -61,39 +55,21 @@ typedef bool (*stf_Target)(void);
 */
 typedef struct _stf_test
 {
-  char target_string[64];
-  char target_description[64];
+  const char *name;
+  const char *description;
+  stf_Target target_function;
 } stf_Test;
 
 /*
-  -- Helper macro to converting function name to string --
-  @note Used internally
+  -- ModuleExport Type/Struct --
+  Sized array for decaying pointer containing module 
+  stf_Test[], used when exporting tests from a module.
 */
-#define __FN_STR__(x) #x
-
-/*
-  -- Helper macro to build a Test Case --
-*/
-#define STF_TEST_CASE(function, description) \
-  (&(stf_Test){__FN_STR__(function), description})
-
-/*
-  -- Test_List Type/Struct --
-  Dynamic array containing entries for every test
-*/
-typedef struct _stf_test_list
+typedef struct _stf_module_export
 {
-  stf_Test *items;
   size_t count;
-  size_t capacity;
-} stf_Tests;
-
-/*
-  -- Register a test entry into a stf_Tests list --
-  Should be called on stf_module_list for adding
-  test entries, see "Writing Tests"
-*/
-APOLLO_DEF void stf_register_test(stf_Tests *tests, stf_Test *test);
+  stf_Test *items;
+} stf_ModuleExport;
 
 #endif //!STF_H
 
@@ -103,12 +79,10 @@ APOLLO_DEF void stf_register_test(stf_Tests *tests, stf_Test *test);
 #include "apollo.h"
 
 /*
-  -- ModuleEntryPoint Type --
-  Type alias to a function pointer with a stf_module_list signature.
-  Every test file should have that entry point:
-  `void stf_module_list(stf_Tests *tests)`
+  -- Module Type --
+  Type alias to OS dynamic library / shared object handle
 */
-typedef void (*stf_ModuleEntryPoint)(stf_Tests *);
+typedef void *stf_Module;
 
 /*
   -- Load a module --
@@ -123,10 +97,10 @@ APOLLO_DEF stf_Module stf_module_load(const char *module_path);
   @param module: `stf_Module` to load from
   @param target: Name of the function to load (C string)
   @param quiet: 'true' if no error messages should be logged
-  @return `stf_Target` function pointer, `NULL` if couldn't find `target`
+  @return `void *` pointer, `NULL` if couldn't find `target`
   @note Used internally by stf_cli
 */
-APOLLO_DEF stf_Target stf_module_target(stf_Module module, const char *target, bool quiet);
+APOLLO_DEF void * stf_module_load_symbol(stf_Module module, const char *target, bool quiet);
 
 /*
   -- Unload a module --
@@ -144,40 +118,35 @@ APOLLO_DEF void stf_cli_manual(void);
 
 /*
   -- List tests of a module --
-  @param stf_exec: Path to stf CLI binary (C string)
   @param stf_target: Path to module to load (C string)
   @return `true` on success, `false` on error (prints errors)
   @note Used internally by stf_cli
 */
-APOLLO_DEF bool stf_cli_list(const char *stf_exec, const char *stf_target);
+APOLLO_DEF bool stf_cli_list(const char *stf_target);
 
 /*
   -- Run all tests of a module --
-  @param stf_exec: Path to stf CLI binary (C string)
   @param stf_target: Path to module to load (C string)
   @return `true` on success, `false` on error (prints errors)
   @note Used internally by stf_cli
 */
-APOLLO_DEF bool stf_cli_all(const char *stf_exec, const char *stf_target);
+APOLLO_DEF bool stf_cli_all(const char *stf_target);
 
 /*
   -- Run <stf_test> of a module --
-  @param stf_exec: Path to stf CLI binary (C string)
   @param stf_target: Path to module to load (C string)
   @param stf_test: Name of test to run (C string)
   @return `true` on success, `false` on error (prints errors)
   @note Used internally by stf_cli
 */
 APOLLO_DEF bool stf_cli_test(
-  const char *stf_exec,
   const char *stf_target,
   const char *stf_test
 );
 
 /*
-  -- Run <test> of <module> --
+  -- Run <test> from <stf_target> module --
   @param stf_target: Path to module to load (C string)
-  @param module: Module from where the test was loaded
   @param test: The test that is going to be ran
   @return `false` on error (prints errors) or the result 
   of the test ran 
@@ -185,7 +154,6 @@ APOLLO_DEF bool stf_cli_test(
 */
 APOLLO_DEF bool stf_run_test(
   const char *stf_target,
-  const stf_Module module,
   stf_Test *test
 );
 
@@ -203,16 +171,15 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  const char *stf_exec = argv[0];
   const char *stf_target = argv[1];
   const char *stf_action = argv[2];
   
   if (strcmp(stf_action, "list") == 0) {
-    if (!stf_cli_list(stf_exec, stf_target)) return 1;
+    if (!stf_cli_list(stf_target)) return 1;
   } else if (strcmp(stf_action, "all") == 0) {
-    if (!stf_cli_all(stf_exec, stf_target)) return 1;
+    if (!stf_cli_all(stf_target)) return 1;
   } else {
-    return !stf_cli_test(stf_exec, stf_target, stf_action);
+    return !stf_cli_test(stf_target, stf_action);
   }
 
   return 0;
@@ -263,30 +230,30 @@ APOLLO_DEF void stf_module_unload(stf_Module module)
 #endif
 }
 
-APOLLO_DEF stf_Target stf_module_target(stf_Module module, const char *target, bool quiet)
+APOLLO_DEF void *stf_module_load_symbol(stf_Module module, const char *target, bool quiet)
 {
-  stf_Target _target = NULL;
+  void *_symbol = NULL;
 #if defined(APOLLO_SYS_WINDOWS)
-  _target = (stf_Target)GetProcAddress(module, target);
+  _symbol = GetProcAddress(module, target);
 #elif defined(APOLLO_SYS_UNIX)
-  _target = (stf_Target)dlsym(module, target);
+  _symbol = dlsym(module, target);
 #endif
 
-  if (!_target && !quiet) {
+  if (!_symbol && !quiet) {
     stf_err("[ERROR]: Unable to load target \"%s\" from a module\n", target);
   }
 
-  return _target;
+  return _symbol;
 }
 
-APOLLO_DEF bool stf_module_load_test_list(const char *stf_target, stf_Module module, stf_Tests *tests)
+APOLLO_DEF bool stf_module_load_tests(const char *stf_target, stf_Module module, stf_ModuleExport *tests)
 {
   // Checking for NULL module should be done by caller
-  stf_ModuleEntryPoint stf_module_list_entry = (stf_ModuleEntryPoint)stf_module_target(module, "stf_module_list", true);
+  stf_ModuleExport *stf_module = (stf_ModuleExport *)stf_module_load_symbol(module, "stf_module_exports", true);
   
-  if (!stf_module_list_entry) {
+  if (!stf_module) {
     stf_err(
-      "[ERROR]: Entry point: \"stf_module_list\" missing from \"%s\"\n",
+      "[ERROR]: Missing export: \"stf_module_exports\" from \"%s\"\n",
       stf_target
     );
 
@@ -294,34 +261,44 @@ APOLLO_DEF bool stf_module_load_test_list(const char *stf_target, stf_Module mod
     return false;
   }
 
-  size_t prev_count = tests->count;
-  stf_module_list_entry(tests);
-
-  if (tests->count <= prev_count) {
+  if (stf_module->items == NULL) {
     stf_err(
-      "[ERROR]: module \"%s\" \"stf_module_list\" didn't add any test\n",
+      "[ERROR]: Invalid pointer: \"stf_module_exports->items\" (NULL) from \"%s\"\n",
       stf_target
     );
 
     stf_module_unload(module);
-    return false;
+    return false; 
   }
+
+  if (stf_module->count == 0) {
+    stf_err(
+      "[ERROR]: Invalid count: \"stf_module_exports->count\" (%zu) from \"%s\"\n",
+      stf_module->count, stf_target
+    );
+
+    stf_module_unload(module);
+    return false; 
+  }
+  
+  tests->count = stf_module->count;
+  tests->items = stf_module->items;
 
   return true;
 }
 
-APOLLO_DEF bool stf_cli_list(const char *stf_exec, const char *stf_target)
+APOLLO_DEF bool stf_cli_list(const char *stf_target)
 {
   stf_Module module = stf_module_load(stf_target);
   if (!module) return false;
 
-  stf_Tests tests = {0};
-  if (!stf_module_load_test_list(stf_target, module, &tests)) return false;
+  stf_ModuleExport tests = {0};
+  if (!stf_module_load_tests(stf_target, module, &tests)) return false;
 
   for (size_t i=0; i < tests.count; ++i) {
     stf_log("[TEST]: \"%s\" -- %s --\n",
-      tests.items[i].target_string,
-      tests.items[i].target_description
+      tests.items[i].name,
+      tests.items[i].description
     );
   }
 
@@ -329,20 +306,20 @@ APOLLO_DEF bool stf_cli_list(const char *stf_exec, const char *stf_target)
   return true;
 }
 
-APOLLO_DEF bool stf_cli_all(const char *stf_exec, const char *stf_target)
+APOLLO_DEF bool stf_cli_all(const char *stf_target)
 {
   stf_Module module = stf_module_load(stf_target);
   if (!module) return false;
 
-  stf_Tests tests = {0};
-  if (!stf_module_load_test_list(stf_target, module, &tests)) return false;
+  stf_ModuleExport tests = {0};
+  if (!stf_module_load_tests(stf_target, module, &tests)) return false;
 
   size_t exec_count = tests.count;
   size_t succeeded_count = 0;
 
   for (uint32_t i=0; i<exec_count; ++i) {
     stf_Test *test = &tests.items[i];
-    succeeded_count += stf_run_test(stf_target, module, test);
+    succeeded_count += stf_run_test(stf_target, test);
   }
 
   stf_log(
@@ -351,26 +328,26 @@ APOLLO_DEF bool stf_cli_all(const char *stf_exec, const char *stf_target)
     succeeded_count,
     succeeded_count * 100 / exec_count
   );
+
   stf_module_unload(module);
   return true;
 }
 
 APOLLO_DEF bool stf_cli_test(
-  const char *stf_exec,
   const char *stf_target,
   const char *stf_test)
 {
   stf_Module module = stf_module_load(stf_target);
   if (!module) return false;
 
-  stf_Tests tests = {0};
-  if (!stf_module_load_test_list(stf_target, module, &tests)) return false;
+  stf_ModuleExport tests = {0};
+  if (!stf_module_load_tests(stf_target, module, &tests)) return false;
 
   for (uint32_t i=0; i<tests.count; ++i) {
     stf_Test *test = &tests.items[i];
     
-    if (strcmp(stf_test, test->target_string) == 0) 
-      return stf_run_test(stf_target, module, test);
+    if (strcmp(stf_test, test->name) == 0) 
+      return stf_run_test(stf_target, test);
   }
   
   stf_err("[ERROR]: No test named \"%s\" on module %s\n", stf_test, stf_target);
@@ -380,15 +357,14 @@ APOLLO_DEF bool stf_cli_test(
 
 APOLLO_DEF bool stf_run_test(
   const char *stf_target,
-  const stf_Module module,
   stf_Test *test)
 {
-  stf_Target target = stf_module_target(module, test->target_string, true);
+  stf_Target target = test->target_function;
 
   if (target == NULL) {
     stf_err(
-      "[INFO]: Ignoring case: \"%s\" (registered in \"%s\") unable to resolve it's address\n",
-      test->target_string,
+      "[INFO]: Ignoring test case: \"%s\" (registered in \"%s\") unable to resolve it's address\n",
+      test->name,
       stf_target
     );
 
@@ -396,15 +372,15 @@ APOLLO_DEF bool stf_run_test(
   }
 
   stf_log(
-    "[INFO]: Executing case: \"%s\" (from \"%s\") -- %s --\n",
-    test->target_string, stf_target, test->target_description
+    "[INFO]: Executing test case: \"%s\" (from \"%s\") -- %s --\n",
+    test->name, stf_target, test->description
   );
 
   bool succeeded = target();
 
   stf_log(
-    "[INFO]: Finished case: \"%s\" (from \"%s\") -- %s (%s) --\n",
-    test->target_string, stf_target,  
+    "[INFO]: Finished test case: \"%s\" (from \"%s\") -- %s (%s) --\n",
+    test->name, stf_target,  
     succeeded ? "succeeded" : "didn't succeeded",
     succeeded ? "true" : "false"
   );
@@ -419,40 +395,11 @@ APOLLO_DEF bool stf_run_test(
 #define APOLLO_IMPL
 #include "apollo.h"
 
-APOLLO_DEF void stf_register_test(stf_Tests *tests, stf_Test *test)
-{
-  // Initialize dynamic array if not done yet
-  if (tests->capacity == 0) {
-    // Space for 16 tests by default seems reasonable
-    tests->capacity = 16;
-    tests->items = (stf_Test *)APOLLO_ALLOC(sizeof(stf_Test) * tests->capacity);
-    if (tests->items == NULL) {
-      stf_err("[ERROR]: Unable to allocate space for test list\n", 0);
-      return;
-    }
-  }
-
-  // Reallocate list if capacity exceeded
-  if ((tests->count + 1) > tests->capacity) {
-    // Allocate space for another 16 entries
-    tests->capacity += 16;
-    tests->items = (stf_Test *)APOLLO_REALLOC(
-      tests->items, 
-      sizeof(stf_Test) * tests->capacity
-    );
-
-    if (tests->items == NULL) {
-      stf_err("[ERROR]: Unable to reallocate space for test list\n", 0);
-      return;
-    }
-  }
-
-  // Actually add the test entry
-  stf_Test *dest = &tests->items[tests->count++];
-  if (APOLLO_MEMCPY(dest, test, sizeof(stf_Test)) != dest) {
-    stf_err("[ERROR]: Unable setup test entry for: %s\n", test->target_string);
-    return;
-  }
-}
+#define STF_MODULE_EXPORTS(tests)         \
+  stf_ModuleExport stf_module_exports =   \
+  {                                       \
+    sizeof((tests)) / sizeof(stf_Test),   \
+    (tests),                              \
+  }                                       \
 
 #endif //!STF_IMPL_MOD
