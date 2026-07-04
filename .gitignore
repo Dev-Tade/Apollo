@@ -1,5 +1,6 @@
 .vscode
 *.exe
+*.so
 *.dll
 *.bat
 *.sh
