@@ -7,16 +7,6 @@
 #include <string.h>
 #include <stdio.h>
 
-void stf_module_list(stf_Tests *tests)
-{
-  stf_register_test(tests, STF_TEST_CASE(arena_init_test, "inits an arena"));
-  stf_register_test(tests, STF_TEST_CASE(arena_alloc_test, "inits an arena, allocates a u64 and string of 64 chars"));
-  stf_register_test(tests, STF_TEST_CASE(arena_remaining_test, "inits an arena, reports it remaining space"));
-  stf_register_test(tests, STF_TEST_CASE(arena_used_test, "inits an arena, reports it used space"));
-  stf_register_test(tests, STF_TEST_CASE(arena_alloc_no_space_left, "tries to allocate but runs out of space"));
-  stf_register_test(tests, STF_TEST_CASE(arena_alloc_null_arena, "tries to allocate on an invalid arena"));
-}
-
 static Arena test_arena;
 
 bool arena_init_test(void)
@@ -38,7 +28,7 @@ bool arena_alloc_test(void)
   }
 
   *my_u64 = 0xc0ffee12900daf00;
-  printf("my_u64: %p -> %llu\n", my_u64, *my_u64);
+  printf("my_u64: %p -> %lu\n", my_u64, *my_u64);
 
   // Allocate a string of 64 characters
   size_t my_string_size = 64;
@@ -98,3 +88,15 @@ bool arena_alloc_null_arena(void)
 {
   return !arena_alloc(NULL, 20);
 }
+
+stf_Test arena_module_tests[] =
+{
+  {"init", "Initializes an arena", arena_init_test},
+  {"alloc", "Allocates memory", arena_alloc_test},
+  {"remaining", "Returns remaining space", arena_remaining_test},
+  {"used", "Returns used space", arena_used_test},
+  {"noleft", "Allocation fails when full", arena_alloc_no_space_left},
+  {"null", "Allocation with NULL arena", arena_alloc_null_arena},
+};
+
+STF_MODULE_EXPORTS(arena_module_tests);

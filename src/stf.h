@@ -32,14 +32,14 @@
   @note When no variadic arguments are used, pass zero like so:
   `stf_err(..., 0)`
 */
-#define stf_err(fmt, ...) (fprintf(stderr, fmt, __VA_ARGS__))
+#define stf_err(...) (fprintf(stderr, __VA_ARGS__))
 
 /*
   -- Helper macro to printf to stdout --
   @note When no variadic arguments are used, pass zero like so:
   `stf_log(..., 0)`
 */
-#define stf_log(fmt, ...) (fprintf(stdout, fmt, __VA_ARGS__))
+#define stf_log(...) (fprintf(stdout, __VA_ARGS__))
 
 /*
   -- Target Type --
@@ -187,15 +187,15 @@ int main(int argc, char *argv[])
 
 APOLLO_DEF void stf_cli_manual(void)
 {
-  stf_log("-- Simple Test Framework --\n", 0);
-  stf_log(" # Terms:\n", 0);
-  stf_log(" > \"module\" = dynamic library / shared object (.dll, .so, .dylib)\n", 0);
-  stf_log(" > \"list\" and \"all\" are test cases implemented by stf CLI\n", 0);
-  stf_log(" # Command Line:\n", 0);
-  stf_log(" > stf <target-file.module> list   -- List all tests inside target module\n", 0);
-  stf_log(" > stf <target-file.module> all    -- Run all tests inside target module\n", 0);
-  stf_log(" > stf <target-file.module> <test> -- Run <test> from target module\n", 0);
-  stf_log(" # Writing Tests: Checkout stf.h\n", 0);
+  stf_log("-- Simple Test Framework --\n");
+  stf_log(" # Terms:\n");
+  stf_log(" > \"module\" = dynamic library / shared object (.dll, .so, .dylib)\n");
+  stf_log(" > \"list\" and \"all\" are test cases implemented by stf CLI\n");
+  stf_log(" # Command Line:\n");
+  stf_log(" > stf <target-file.module> list   -- List all tests inside target module\n");
+  stf_log(" > stf <target-file.module> all    -- Run all tests inside target module\n");
+  stf_log(" > stf <target-file.module> <test> -- Run <test> from target module\n");
+  stf_log(" # Writing Tests: Checkout stf.h\n");
 }
 
 APOLLO_DEF stf_Module stf_module_load(const char *module_path)
@@ -219,12 +219,12 @@ APOLLO_DEF void stf_module_unload(stf_Module module)
 {
 #if defined(APOLLO_SYS_WINDOWS)
   if(FreeLibrary(module) == 0) {
-    stf_err("[ERROR]: An error ocurred while unloading a module\n", NULL);
+    stf_err("[ERROR]: An error ocurred while unloading a module\n");
     exit(1);
   }
 #elif defined(APOLLO_SYS_UNIX)
   if (dlclose(module) != 0) {
-    stf_err("[ERROR]: An error ocurred while unloading a module\n", NULL);
+    stf_err("[ERROR]: An error ocurred while unloading a module\n");
     exit(1);
   }
 #endif
@@ -323,7 +323,7 @@ APOLLO_DEF bool stf_cli_all(const char *stf_target)
   }
 
   stf_log(
-    "[INFO]: Executed %zu tests, %zu succeeded (%d%%)\n",
+    "[INFO]: Executed %zu tests, %zu succeeded (%zu%%)\n",
     exec_count,
     succeeded_count,
     succeeded_count * 100 / exec_count

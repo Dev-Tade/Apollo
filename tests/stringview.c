@@ -4,20 +4,6 @@
 #define STRINGVIEW_IMPL
 #include "../src/stringview.h"
 
-void stf_module_list(stf_Tests *tests)
-{
-  stf_register_test(tests, STF_TEST_CASE(build_stringview_from_cstr, "Build a stringview from a raw c string"));
-  stf_register_test(tests, STF_TEST_CASE(build_stringview_from_cstr_sub, "Builds stringviews from a raw c string region"));
-  stf_register_test(tests, STF_TEST_CASE(build_stringview_from_sub, "Build a stringview from another stringview region"));
-  stf_register_test(tests, STF_TEST_CASE(split_stringview_by_offset, "Splits a stringview by a specified offset"));
-  stf_register_test(tests, STF_TEST_CASE(split_stringview_by_delim, "Splits a stringview by a specified delimitier"));
-  stf_register_test(tests, STF_TEST_CASE(advance_stringview_from_left, "Advance a stringview from it's left side"));
-  stf_register_test(tests, STF_TEST_CASE(getchar_stringview_from_left, "Get a character from left side of a stringview"));
-  stf_register_test(tests, STF_TEST_CASE(convert_stringview_to_number, "Convert a stringview to a number"));
-  stf_register_test(tests, STF_TEST_CASE(convert_stringview_to_cstr, "Convert a stringview to a C string"));
-  stf_register_test(tests, STF_TEST_CASE(copy_stringview_into_buffer, "Copy a stringview contents into a sized buffer"));
-}
-
 const char *test_string = "Hello StringViews";
 
 bool build_stringview_from_cstr(void)
@@ -143,9 +129,9 @@ bool convert_stringview_to_number(void)
   printf("invalid (non digit) = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(invalid_string));
   printf("invalid (negative u64) = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(invalid_sign_string));
   printf("output:\n");
-  printf("expected i64 = %lld\n", expected_i64);
-  printf("expected u64 = %llu\n", expected_u64);
-  printf("expected invalid (any) = %lld\n", expected_invalid);
+  printf("expected i64 = %ld\n", expected_i64);
+  printf("expected u64 = %lu\n", expected_u64);
+  printf("expected invalid (any) = %ld\n", expected_invalid);
 
   return
     ((i64 == expected_i64) && (u64 == expected_u64)) &&
@@ -184,3 +170,19 @@ bool copy_stringview_into_buffer(void)
     (copy_valid_size == true) &&
     (memcmp_res == 0);
 }
+
+stf_Test stringview_module_tests[] =
+{
+  {"from_cstr", "Build from C string", build_stringview_from_cstr},
+  {"from_cstr_sub", "Build from C string slice", build_stringview_from_cstr_sub},
+  {"from_sub", "Build from stringview slice", build_stringview_from_sub},
+  {"split_offset", "Split at offset", split_stringview_by_offset},
+  {"split_delim", "Split by delimiter", split_stringview_by_delim},
+  {"advance_left", "Advance from left", advance_stringview_from_left},
+  {"getchar_left", "Read a character from the left", getchar_stringview_from_left},
+  {"to_number", "Convert to number", convert_stringview_to_number},
+  {"to_cstr", "Convert to C string", convert_stringview_to_cstr},
+  {"copy_to_buffer", "Copy into buffer", copy_stringview_into_buffer},
+};
+
+STF_MODULE_EXPORTS(stringview_module_tests);
