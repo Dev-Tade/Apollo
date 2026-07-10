@@ -4,6 +4,8 @@
 #define STRINGVIEW_IMPL
 #include "../src/stringview.h"
 
+#include <inttypes.h>
+
 const char *test_string = "Hello StringViews";
 
 bool build_stringview_from_cstr(void)
@@ -129,9 +131,9 @@ bool convert_stringview_to_number(void)
   printf("invalid (non digit) = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(invalid_string));
   printf("invalid (negative u64) = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(invalid_sign_string));
   printf("output:\n");
-  printf("expected i64 = %ld\n", expected_i64);
-  printf("expected u64 = %lu\n", expected_u64);
-  printf("expected invalid (any) = %ld\n", expected_invalid);
+  printf("expected i64 = %"PRIi64"\n", expected_i64);
+  printf("expected u64 = %"PRIu64"\n", expected_u64);
+  printf("expected invalid (any) = %"PRIi64"\n", expected_invalid);
 
   return
     ((i64 == expected_i64) && (u64 == expected_u64)) &&
