@@ -41,7 +41,7 @@ bool arena_alloc_test(void)
   }
 
   char *my_string_literal = "coffee is good_af";
-  APOLLO_MEMCPY(my_string, my_string_literal, 18);
+  memcpy(my_string, my_string_literal, 18);
   printf("my_string: %p -> %s\n", my_string, my_string);
 
   return true;

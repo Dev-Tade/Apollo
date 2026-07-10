@@ -150,8 +150,8 @@ bool convert_stringview_to_cstr(void)
   char *to = stringview_to_cstr(&sv);
   size_t to_size = strlen(to);
 
-  int memcmp_res = APOLLO_MEMCMP(source, to, size);
-  APOLLO_FREE(to);
+  int memcmp_res = memcmp(source, to, size);
+  free(to);
   
   return (memcmp_res == 0) && (size == to_size);
 }
@@ -162,7 +162,7 @@ bool copy_stringview_into_buffer(void)
   char buff[16] = {0};
   bool copy_invalid_size = stringview_into_buff(&sv, buff, 8);
   bool copy_valid_size = stringview_into_buff(&sv, buff, 16);
-  int memcmp_res = APOLLO_MEMCMP(sv.data, buff, sv.size);
+  int memcmp_res = memcmp(sv.data, buff, sv.size);
 
   printf("base = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(sv));
   printf("copy = %s\n", buff);
