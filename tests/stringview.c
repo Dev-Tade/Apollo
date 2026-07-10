@@ -5,6 +5,7 @@
 #include "../src/stringview.h"
 
 #include <inttypes.h>
+#include <stdlib.h>
 
 const char *test_string = "Hello StringViews";
 
