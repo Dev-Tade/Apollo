@@ -88,7 +88,7 @@ ARENA_DEF size_t arena_used(Arena *arena);
 
 /*
   -- ARENA_MALLOC --
-  MAcro that allows overrinding the default allocator function (malloc).
+  Macro that allows overrinding the default allocator function (malloc).
   The signature is ARENA_MALLOC(size)
 */
 #ifndef ARENA_MALLOC
@@ -98,7 +98,7 @@ ARENA_DEF size_t arena_used(Arena *arena);
 
 /*
   -- ARENA_FREE --
-  MAcro that allows overrinding the default free function (free).
+  Macro that allows overrinding the default free function (free).
   The signature is ARENA_FREE(block)
 */
 #ifndef ARENA_FREE
@@ -108,7 +108,7 @@ ARENA_DEF size_t arena_used(Arena *arena);
 
 /*
   -- ARENA_MEMSET --
-  MAcro that allows overrinding the default memset function (memset).
+  Macro that allows overrinding the default memset function (memset).
   The signature is ARENA_MEMSET(block, value, size)
 */
 #ifndef ARENA_MEMSET
