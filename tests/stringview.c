@@ -4,6 +4,9 @@
 #define STRINGVIEW_IMPL
 #include "../src/stringview.h"
 
+#include <inttypes.h>
+#include <stdlib.h>
+
 const char *test_string = "Hello StringViews";
 
 bool build_stringview_from_cstr(void)
@@ -129,9 +132,9 @@ bool convert_stringview_to_number(void)
   printf("invalid (non digit) = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(invalid_string));
   printf("invalid (negative u64) = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(invalid_sign_string));
   printf("output:\n");
-  printf("expected i64 = %ld\n", expected_i64);
-  printf("expected u64 = %lu\n", expected_u64);
-  printf("expected invalid (any) = %ld\n", expected_invalid);
+  printf("expected i64 = %"PRIi64"\n", expected_i64);
+  printf("expected u64 = %"PRIu64"\n", expected_u64);
+  printf("expected invalid (any) = %"PRIi64"\n", expected_invalid);
 
   return
     ((i64 == expected_i64) && (u64 == expected_u64)) &&
@@ -148,8 +151,8 @@ bool convert_stringview_to_cstr(void)
   char *to = stringview_to_cstr(&sv);
   size_t to_size = strlen(to);
 
-  int memcmp_res = APOLLO_MEMCMP(source, to, size);
-  APOLLO_FREE(to);
+  int memcmp_res = memcmp(source, to, size);
+  free(to);
   
   return (memcmp_res == 0) && (size == to_size);
 }
@@ -160,7 +163,7 @@ bool copy_stringview_into_buffer(void)
   char buff[16] = {0};
   bool copy_invalid_size = stringview_into_buff(&sv, buff, 8);
   bool copy_valid_size = stringview_into_buff(&sv, buff, 16);
-  int memcmp_res = APOLLO_MEMCMP(sv.data, buff, sv.size);
+  int memcmp_res = memcmp(sv.data, buff, sv.size);
 
   printf("base = "STRINGVIEW_FMT"\n", STRINGVIEW_ARG(sv));
   printf("copy = %s\n", buff);

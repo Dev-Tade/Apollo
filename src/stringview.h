@@ -1,7 +1,23 @@
+
+/*
+  -- STRINGVIEW_DEF --
+  Storage class specifier
+  extern when including header, and none when including implementation.
+*/
+#ifdef STRINGVIEW_IMPL
+// Implementation include
+#define STRINGVIEW_DEF 
+#else
+// Header include
+#define STRINGVIEW_DEF extern
+#endif //!STRINGVIEW_IMPL
+
 #ifndef STRINGVIEW_H
 #define STRINGVIEW_H
 
-#include "apollo.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 /*
   -- StringView --
@@ -13,13 +29,13 @@
   @param data: Pointer to raw c string
   @param size: Length of the string view  
 */
-typedef struct _StringView
-{
-  char  *data;
-  size_t size; 
-} StringView;
+typedef struct StringView StringView;
 
-#define STRINGVIEW() ((StringView){0})
+struct StringView
+{
+  const char *data;
+  size_t size; 
+};
 
 /*
   -- Helper macro for formatting string views into printf --
@@ -36,7 +52,7 @@ typedef struct _StringView
   @return `StringView`: Wich length is
   calculated until a null terminator.
 */
-APOLLO_DEF StringView stringview_from_cstr(char *cstr);
+STRINGVIEW_DEF StringView stringview_from_cstr(const char *cstr);
 
 /*
   -- Build a string view from a c string region --
@@ -48,7 +64,7 @@ APOLLO_DEF StringView stringview_from_cstr(char *cstr);
   @return `StringView`: Wich length is `end`
   (or clamped at null terminator - start)
 */
-APOLLO_DEF StringView stringview_from_cstr_sub(char *cstr, size_t start, size_t end);
+STRINGVIEW_DEF StringView stringview_from_cstr_sub(const char *cstr, size_t start, size_t end);
 
 /*
   -- Build a string view from another string view region --
@@ -60,7 +76,7 @@ APOLLO_DEF StringView stringview_from_cstr_sub(char *cstr, size_t start, size_t 
   @return `StringView`: Wich length is `end`
   (or clamped at `sv` size - start)
 */
-APOLLO_DEF StringView stringview_from_sub(const StringView *sv, size_t start, size_t end);
+STRINGVIEW_DEF StringView stringview_from_sub(const StringView *sv, size_t start, size_t end);
 
 /*
   -- Splits a string view at the specified offset --
@@ -70,7 +86,7 @@ APOLLO_DEF StringView stringview_from_sub(const StringView *sv, size_t start, si
   @return `StringView`: that contains the right part
   that was chopped, sv will contain left side. 
 */
-APOLLO_DEF StringView stringview_split_offset(StringView *sv, size_t offset);
+STRINGVIEW_DEF StringView stringview_split_offset(StringView *sv, size_t offset);
 
 /*
   -- Splits a string view at first ocurrence of the specified delim --
@@ -79,20 +95,20 @@ APOLLO_DEF StringView stringview_split_offset(StringView *sv, size_t offset);
   @return `StringView`: that contains the right part
   that was chopped, sv will contain left side. consumes delimitier
 */
-APOLLO_DEF StringView stringview_split_delim(StringView *sv, char delim);
+STRINGVIEW_DEF StringView stringview_split_delim(StringView *sv, char delim);
 
 /*
   -- Advances input string view by one from the left side --
   @param sv: Pointer to base string view.
 */
-APOLLO_DEF void stringview_next(StringView *sv);
+STRINGVIEW_DEF void stringview_next(StringView *sv);
 
 /*
   -- Get the current character from the left side --
   @param sv: Pointer to base string view.
   @return 'char': The character from the left side
 */
-APOLLO_DEF char stringview_getc(const StringView *sv);
+STRINGVIEW_DEF char stringview_getc(const StringView *sv);
 
 /*
   -- Convert string view contents to a signed 64 bit number --
@@ -101,7 +117,7 @@ APOLLO_DEF char stringview_getc(const StringView *sv);
   @note: Stops at the first non digit character, 
   supports the following signs: + - before the digits.
 */
-APOLLO_DEF int64_t stringview_to_i64(const StringView *sv);
+STRINGVIEW_DEF int64_t stringview_to_i64(const StringView *sv);
 
 /*
   -- Convert string view contents to an unsigned 64 bit number --
@@ -110,7 +126,7 @@ APOLLO_DEF int64_t stringview_to_i64(const StringView *sv);
   @note: Stops at the first non digit character,
   and only supports + as a valid sign.
 */
-APOLLO_DEF uint64_t stringview_to_u64(const StringView *sv);
+STRINGVIEW_DEF uint64_t stringview_to_u64(const StringView *sv);
 
 /*
   -- Convert string view to a C string --
@@ -118,7 +134,7 @@ APOLLO_DEF uint64_t stringview_to_u64(const StringView *sv);
   @return 'char *': Heap allocated C string
   @note: User must manually free once it's done.
 */
-APOLLO_DEF char *stringview_to_cstr(const StringView *sv);
+STRINGVIEW_DEF char *stringview_to_cstr(const StringView *sv);
 
 /*
   -- Copy string view into a buffer and append null terminator --
@@ -128,26 +144,45 @@ APOLLO_DEF char *stringview_to_cstr(const StringView *sv);
   @return 'true' on when data is copied, 
   'false' when no data is copied
 */
-APOLLO_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t size);
+STRINGVIEW_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t size);
 
 #endif //!STRINGVIEW_H
 
 #ifdef STRINGVIEW_IMPL
 
-#define APOLLO_IMPL
-#include "apollo.h"
+/*
+  -- STRINGVIEW_MALLOC --
+  Macro that allows overrinding the default malloc function (malloc).
+  The signature is STRINGVIEW_MALLOC(size)
+*/
+#ifndef STRINGVIEW_MALLOC
+#include <stdlib.h>
+#define STRINGVIEW_MALLOC(size) malloc(size)
+#endif //!STRINGVIEW_MALLOC
 
-APOLLO_DEF StringView stringview_from_cstr(char *cstr)
+/*
+  -- STRINGVIEW_MEMCPY --
+  Macro that allows overrinding the default memcpy function (memcpy).
+  The signature is STRINGVIEW_MEMCPY(dest, source, size)
+*/
+#ifndef STRINGVIEW_MEMCPY
+#include <string.h>
+#define STRINGVIEW_MEMCPY(dest, source, size) memcpy(dest, source, size)
+#endif //!STRINGVIEW_MEMCPY
+
+#include <string.h>
+
+STRINGVIEW_DEF StringView stringview_from_cstr(const char *cstr)
 {
-  StringView sv = STRINGVIEW();
+  StringView sv = {0, 0};
   sv.data = cstr;
   sv.size = strlen(cstr);
   return sv;
 }
 
-APOLLO_DEF StringView stringview_from_cstr_sub(char *cstr, size_t start, size_t end)
+STRINGVIEW_DEF StringView stringview_from_cstr_sub(const char *cstr, size_t start, size_t end)
 {
-  StringView sv = STRINGVIEW();
+  StringView sv = {0, 0};
   size_t len = strlen(cstr);
 
   if (start >= len) {
@@ -162,9 +197,9 @@ APOLLO_DEF StringView stringview_from_cstr_sub(char *cstr, size_t start, size_t 
   return sv;
 }
 
-APOLLO_DEF StringView stringview_from_sub(const StringView *sv, size_t start, size_t end)
+STRINGVIEW_DEF StringView stringview_from_sub(const StringView *sv, size_t start, size_t end)
 {
-  StringView sub_sv = STRINGVIEW();
+  StringView sub_sv = {0, 0};
 
   if (start >= sv->size) {
     sub_sv.data = sv->data + sv->size;
@@ -178,9 +213,9 @@ APOLLO_DEF StringView stringview_from_sub(const StringView *sv, size_t start, si
   return sub_sv;
 }
 
-APOLLO_DEF StringView stringview_split_offset(StringView *sv, size_t offset)
+STRINGVIEW_DEF StringView stringview_split_offset(StringView *sv, size_t offset)
 {
-  StringView right = STRINGVIEW();
+  StringView right = {0, 0};
 
   if (offset > sv->size) {
     right.data = sv->data + sv->size;
@@ -196,9 +231,9 @@ APOLLO_DEF StringView stringview_split_offset(StringView *sv, size_t offset)
   return right;
 }
 
-APOLLO_DEF StringView stringview_split_delim(StringView *sv, char delim)
+STRINGVIEW_DEF StringView stringview_split_delim(StringView *sv, char delim)
 {
-  StringView right = STRINGVIEW();
+  StringView right = {0, 0};
 
   size_t offset = 0;
   while (offset < sv->size && sv->data[offset] != delim)
@@ -218,7 +253,7 @@ APOLLO_DEF StringView stringview_split_delim(StringView *sv, char delim)
   return right;
 }
 
-APOLLO_DEF void stringview_next(StringView *sv)
+STRINGVIEW_DEF void stringview_next(StringView *sv)
 {
   if ((sv->size - 1) <= 0) return;
 
@@ -226,13 +261,13 @@ APOLLO_DEF void stringview_next(StringView *sv)
   sv->data += 1;
 }
 
-APOLLO_DEF char stringview_getc(const StringView *sv)
+STRINGVIEW_DEF char stringview_getc(const StringView *sv)
 {
   if (sv->size <= 0) return '\0';
   return *sv->data;
 }
 
-APOLLO_DEF int64_t stringview_to_i64(const StringView *sv)
+STRINGVIEW_DEF int64_t stringview_to_i64(const StringView *sv)
 {
   if (sv->size <= 0) return 0;
 
@@ -260,7 +295,7 @@ APOLLO_DEF int64_t stringview_to_i64(const StringView *sv)
   return result * sign;
 }
 
-APOLLO_DEF uint64_t stringview_to_u64(const StringView *sv)
+STRINGVIEW_DEF uint64_t stringview_to_u64(const StringView *sv)
 {
   if (sv->size <= 0) return 0;
 
@@ -285,27 +320,26 @@ APOLLO_DEF uint64_t stringview_to_u64(const StringView *sv)
   return result;
 }
 
-APOLLO_DEF char *stringview_to_cstr(const StringView *sv)
+STRINGVIEW_DEF char *stringview_to_cstr(const StringView *sv)
 {
   if (sv->size <= 0) return NULL;
 
-  char *cstr = APOLLO_ALLOC(sv->size + 1);
+  char *cstr = STRINGVIEW_MALLOC(sv->size + 1);
   if (cstr == NULL) return NULL;
 
-  APOLLO_MEMCPY(cstr, sv->data, sv->size);
+  STRINGVIEW_MEMCPY(cstr, sv->data, sv->size);
   cstr[sv->size] = '\0';
 
   return cstr;
 }
 
-APOLLO_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t size)
+STRINGVIEW_DEF bool stringview_into_buff(const StringView *sv, char buff[], size_t size)
 {
   if (sv->size <= 0 || sv->size >= size) return false;
-  APOLLO_MEMCPY(buff, sv->data, sv->size);
+  STRINGVIEW_MEMCPY(buff, sv->data, sv->size);
   buff[sv->size] = '\0';
   
   return true;
 }
-
 
 #endif //!STRINGVIEW_IMPL

@@ -4,6 +4,8 @@
 #define ARENA_IMPL
 #include "../src/arena.h"
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -28,7 +30,7 @@ bool arena_alloc_test(void)
   }
 
   *my_u64 = 0xc0ffee12900daf00;
-  printf("my_u64: %p -> %lu\n", my_u64, *my_u64);
+  printf("my_u64: %p -> %"PRIu64"\n", my_u64, *my_u64);
 
   // Allocate a string of 64 characters
   size_t my_string_size = 64;
@@ -39,7 +41,7 @@ bool arena_alloc_test(void)
   }
 
   char *my_string_literal = "coffee is good_af";
-  APOLLO_MEMCPY(my_string, my_string_literal, 18);
+  memcpy(my_string, my_string_literal, 18);
   printf("my_string: %p -> %s\n", my_string, my_string);
 
   return true;

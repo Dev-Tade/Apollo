@@ -1,7 +1,22 @@
+
+/*
+  -- ARENA_DEF --
+  Storage class specifier
+  extern when including header, and none when including implementation.
+*/
+#ifdef ARENA_IMPL
+// Implementation include
+#define ARENA_DEF 
+#else
+// Header include
+#define ARENA_DEF extern
+#endif //!ARENA_IMPL
+
 #ifndef ARENA_H
 #define ARENA_H
 
-#include "apollo.h"
+#include <stdbool.h>
+#include <stddef.h>
 
 /*
   -- Arena --
@@ -17,14 +32,14 @@
   do it at your own risk because it may break
   your application if you do so incorrectly.  
 */
-typedef struct _Arena
+typedef struct Arena Arena;
+
+struct Arena
 {
   void *base;
   size_t end;
   size_t ptr;
-} Arena;
-
-#define ARENA() ((Arena){0})
+};
 
 /*
   -- Initialize memory for the Arena --
@@ -33,13 +48,13 @@ typedef struct _Arena
   @return `false`: On init failed
   (NULL arena or failed to allocate).
 */
-APOLLO_DEF bool arena_init(Arena *arena, size_t size);
+ARENA_DEF bool arena_init(Arena *arena, size_t size);
 
 /*
   -- Deallocate memory of the Arena --
   @param arena: Pointer to an Arena.
 */
-APOLLO_DEF void arena_release(Arena *arena);
+ARENA_DEF void arena_release(Arena *arena);
 
 /*
   -- Get memory from the Arena --
@@ -49,7 +64,7 @@ APOLLO_DEF void arena_release(Arena *arena);
   NULL if no more space is avilable in the Arena
   or NULL arena
 */
-APOLLO_DEF void *arena_alloc(Arena *arena, size_t count);
+ARENA_DEF void *arena_alloc(Arena *arena, size_t count);
 
 /*
   -- Get memory left in the Arena --
@@ -57,7 +72,7 @@ APOLLO_DEF void *arena_alloc(Arena *arena, size_t count);
   @return `Number` of bytes left in arena,
   zero if Arena is NULL
 */
-APOLLO_DEF size_t arena_left(Arena *arena);
+ARENA_DEF size_t arena_left(Arena *arena);
 
 /*
   -- Get memory used in the Arena --
@@ -65,35 +80,62 @@ APOLLO_DEF size_t arena_left(Arena *arena);
   @return `Number` of bytes used in arena,
   zero if Arena is NULL
 */
-APOLLO_DEF size_t arena_used(Arena *arena);
+ARENA_DEF size_t arena_used(Arena *arena);
 
 #endif //!ARENA_H
 
 #ifdef ARENA_IMPL
 
-#define APOLLO_IMPL
-#include "apollo.h"
+/*
+  -- ARENA_MALLOC --
+  Macro that allows overrinding the default allocator function (malloc).
+  The signature is ARENA_MALLOC(size)
+*/
+#ifndef ARENA_MALLOC
+#include <stdlib.h>
+#define ARENA_MALLOC(size) malloc(size)
+#endif //!ARENA_MALLOC
 
-APOLLO_DEF bool arena_init(Arena *arena, size_t size)
+/*
+  -- ARENA_FREE --
+  Macro that allows overrinding the default free function (free).
+  The signature is ARENA_FREE(block)
+*/
+#ifndef ARENA_FREE
+#include <stdlib.h>
+#define ARENA_FREE(block) free(block)
+#endif //!ARENA_FREE
+
+/*
+  -- ARENA_MEMSET --
+  Macro that allows overrinding the default memset function (memset).
+  The signature is ARENA_MEMSET(block, value, size)
+*/
+#ifndef ARENA_MEMSET
+#include <string.h>
+#define ARENA_MEMSET(block, value, size) memset(block, value, size)
+#endif //!ARENA_MEMSET
+
+ARENA_DEF bool arena_init(Arena *arena, size_t size)
 {
   if (!arena) return false;
 
-  arena->base = APOLLO_ALLOC(size);
+  arena->base = ARENA_MALLOC(size);
   if (!arena->base) return false;
 
   arena->end = size;
   arena->ptr = 0;
-  APOLLO_MEMSET(arena->base, 0, arena->end);
+  ARENA_MEMSET(arena->base, 0, arena->end);
 
   return true;
 }
 
-APOLLO_DEF void arena_release(Arena *arena)
+ARENA_DEF void arena_release(Arena *arena)
 {
-  APOLLO_FREE(arena->base);
+  ARENA_FREE(arena->base);
 }
 
-APOLLO_DEF void *arena_alloc(Arena *arena, size_t count)
+ARENA_DEF void *arena_alloc(Arena *arena, size_t count)
 {
   if (!arena) return NULL;
   if ((arena->ptr + count) > arena->end) return NULL;
@@ -104,14 +146,14 @@ APOLLO_DEF void *arena_alloc(Arena *arena, size_t count)
   return ret;
 }
 
-APOLLO_DEF size_t arena_left(Arena *arena)
+ARENA_DEF size_t arena_left(Arena *arena)
 {
   if (!arena) return 0;
   
   return (arena->end - arena->ptr);
 }
 
-APOLLO_DEF size_t arena_used(Arena *arena)
+ARENA_DEF size_t arena_used(Arena *arena)
 {
   if (!arena) return 0;
 

@@ -1,7 +1,20 @@
+/*
+  -- STF_DEF --
+  Storage class specifier
+  extern when including header, and none when including implementation.
+*/
+#if defined(STF_IMPL_CLI) || defined(STF_IMPL_MOD)
+// Implementation include
+#define STF_DEF 
+#else
+// Header include
+#define STF_DEF extern
+#endif //!STF_IMPL_CLI
+
 #ifndef STF_H
 #define STF_H
 
-#include "apollo.h"
+#include <stddef.h>
 #include <stdio.h>
 
 /*
@@ -48,30 +61,51 @@ typedef bool (*stf_Target)(void);
   -- Test Entry Type/Struct --
   Contains all info about a test
 */
-typedef struct _stf_test
+typedef struct stf_Test stf_Test;
+
+struct stf_Test
 {
   const char *name;
   const char *description;
   stf_Target target_function;
-} stf_Test;
+};
 
 /*
   -- ModuleExport Type/Struct --
   Sized array for decaying pointer containing module 
   stf_Test[], used when exporting tests from a module.
 */
-typedef struct _stf_module_export
+typedef struct stf_ModuleExport stf_ModuleExport;
+
+struct stf_ModuleExport
 {
   size_t count;
   stf_Test *items;
-} stf_ModuleExport;
+};
 
 #endif //!STF_H
 
 #ifdef STF_IMPL_CLI
 
-#define APOLLO_IMPL
-#include "apollo.h"
+// Platform specific code
+#if (defined(_WIN32) || defined(_WIN64))
+  // Include platform specific dynamic library loading APIs
+  #define WIN32_LEAN_AND_MEAN
+  #include <libloaderapi.h>
+
+  // Helper macro to avoid long condition
+  #define SYS_WIN
+#elif (defined(__unix) || defined(__unix__) || defined(__linux__ || (defined(__APPLE__) && defined(__MACH__))))
+  // Include platform specific dynamic library loading APIs
+  #include <dlfcn.h>
+
+  // Helper macro to avoid long condition
+  #define SYS_UNIX
+#else
+  #error "Underlying OS isn't compilant to Windows or Unix"
+#endif
+
+#include <string.h>
 
 /*
   -- Module Type --
@@ -85,7 +119,7 @@ typedef void *stf_Module;
   @return `stf_Module` handle, `NULL` if couldn't load properly
   @note Used internally by stf_cli
 */
-APOLLO_DEF stf_Module stf_module_load(const char *module_path);
+static stf_Module stf_module_load(const char *module_path);
 
 /*
   -- Load function from module --
@@ -95,7 +129,7 @@ APOLLO_DEF stf_Module stf_module_load(const char *module_path);
   @return `void *` pointer, `NULL` if couldn't find `target`
   @note Used internally by stf_cli
 */
-APOLLO_DEF void * stf_module_load_symbol(stf_Module module, const char *target, bool quiet);
+static void * stf_module_load_symbol(stf_Module module, const char *target, bool quiet);
 
 /*
   -- Unload a module --
@@ -103,13 +137,13 @@ APOLLO_DEF void * stf_module_load_symbol(stf_Module module, const char *target, 
   @return `May print some errors`
   @note Used internally by stf_cli
 */
-APOLLO_DEF void stf_module_unload(stf_Module module);
+static void stf_module_unload(stf_Module module);
 
 /*
   -- Print manual for CLI --
   @note Used internally by stf_cli
 */
-APOLLO_DEF void stf_cli_manual(void);
+static void stf_cli_manual(void);
 
 /*
   -- List tests of a module --
@@ -117,7 +151,7 @@ APOLLO_DEF void stf_cli_manual(void);
   @return `true` on success, `false` on error (prints errors)
   @note Used internally by stf_cli
 */
-APOLLO_DEF bool stf_cli_list(const char *stf_target);
+static bool stf_cli_list(const char *stf_target);
 
 /*
   -- Run all tests of a module --
@@ -125,7 +159,7 @@ APOLLO_DEF bool stf_cli_list(const char *stf_target);
   @return `true` on success, `false` on error (prints errors)
   @note Used internally by stf_cli
 */
-APOLLO_DEF bool stf_cli_all(const char *stf_target);
+static bool stf_cli_all(const char *stf_target);
 
 /*
   -- Run <stf_test> of a module --
@@ -134,7 +168,7 @@ APOLLO_DEF bool stf_cli_all(const char *stf_target);
   @return `true` on success, `false` on error (prints errors)
   @note Used internally by stf_cli
 */
-APOLLO_DEF bool stf_cli_test(
+static bool stf_cli_test(
   const char *stf_target,
   const char *stf_test
 );
@@ -147,7 +181,7 @@ APOLLO_DEF bool stf_cli_test(
   of the test ran 
   @note Used internally by stf_cli
 */
-APOLLO_DEF bool stf_run_test(
+static bool stf_run_test(
   const char *stf_target,
   stf_Test *test
 );
@@ -159,7 +193,7 @@ APOLLO_DEF bool stf_run_test(
   @return `exit code`: 1 error or 0 success
   @note Used internally by stf_cli
 */
-int main(int argc, char *argv[])
+STF_DEF int main(int argc, char *argv[])
 {
   if (argc < 3) {
     stf_cli_manual();
@@ -180,7 +214,7 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-APOLLO_DEF void stf_cli_manual(void)
+static void stf_cli_manual(void)
 {
   stf_log("-- Simple Test Framework --\n");
   stf_log(" # Terms:\n");
@@ -193,13 +227,16 @@ APOLLO_DEF void stf_cli_manual(void)
   stf_log(" # Writing Tests: Checkout stf.h\n");
 }
 
-APOLLO_DEF stf_Module stf_module_load(const char *module_path)
+static stf_Module stf_module_load(const char *module_path)
 {
   stf_Module module = NULL;
-#if defined(APOLLO_SYS_WINDOWS)
+
+#if defined(SYS_WIN)
   module = (void *)LoadLibraryA(module_path);
-#elif defined(APOLLO_SYS_UNIX)
+#elif defined(SYS_UNIX)
   module = dlopen(module_path, RTLD_LAZY);
+#else
+  #error "Underlying OS isn't compilant to Windows or Unix"
 #endif
 
   if (!module) {
@@ -210,28 +247,32 @@ APOLLO_DEF stf_Module stf_module_load(const char *module_path)
   return module;
 }
 
-APOLLO_DEF void stf_module_unload(stf_Module module)
+static void stf_module_unload(stf_Module module)
 {
-#if defined(APOLLO_SYS_WINDOWS)
+#if defined(SYS_WIN)
   if(FreeLibrary(module) == 0) {
     stf_err("[ERROR]: An error ocurred while unloading a module\n");
     exit(1);
   }
-#elif defined(APOLLO_SYS_UNIX)
+#elif defined(SYS_UNIX)
   if (dlclose(module) != 0) {
     stf_err("[ERROR]: An error ocurred while unloading a module\n");
     exit(1);
   }
+#else
+  #error "Underlying OS isn't compilant to Windows or Unix"
 #endif
 }
 
-APOLLO_DEF void *stf_module_load_symbol(stf_Module module, const char *target, bool quiet)
+static void *stf_module_load_symbol(stf_Module module, const char *target, bool quiet)
 {
   void *_symbol = NULL;
-#if defined(APOLLO_SYS_WINDOWS)
+#if defined(SYS_WIN)
   _symbol = GetProcAddress(module, target);
-#elif defined(APOLLO_SYS_UNIX)
+#elif defined(SYS_UNIX)
   _symbol = dlsym(module, target);
+#else
+  #error "Underlying OS isn't compilant to Windows or Unix"
 #endif
 
   if (!_symbol && !quiet) {
@@ -241,7 +282,7 @@ APOLLO_DEF void *stf_module_load_symbol(stf_Module module, const char *target, b
   return _symbol;
 }
 
-APOLLO_DEF bool stf_module_load_tests(const char *stf_target, stf_Module module, stf_ModuleExport *tests)
+static bool stf_module_load_tests(const char *stf_target, stf_Module module, stf_ModuleExport *tests)
 {
   // Checking for NULL module should be done by caller
   stf_ModuleExport *stf_module = (stf_ModuleExport *)stf_module_load_symbol(module, "stf_module_exports", true);
@@ -282,7 +323,7 @@ APOLLO_DEF bool stf_module_load_tests(const char *stf_target, stf_Module module,
   return true;
 }
 
-APOLLO_DEF bool stf_cli_list(const char *stf_target)
+static bool stf_cli_list(const char *stf_target)
 {
   stf_Module module = stf_module_load(stf_target);
   if (!module) return false;
@@ -301,7 +342,7 @@ APOLLO_DEF bool stf_cli_list(const char *stf_target)
   return true;
 }
 
-APOLLO_DEF bool stf_cli_all(const char *stf_target)
+static bool stf_cli_all(const char *stf_target)
 {
   stf_Module module = stf_module_load(stf_target);
   if (!module) return false;
@@ -312,7 +353,7 @@ APOLLO_DEF bool stf_cli_all(const char *stf_target)
   size_t exec_count = tests.count;
   size_t succeeded_count = 0;
 
-  for (uint32_t i=0; i<exec_count; ++i) {
+  for (size_t i=0; i<exec_count; ++i) {
     stf_Test *test = &tests.items[i];
     succeeded_count += stf_run_test(stf_target, test);
   }
@@ -328,7 +369,7 @@ APOLLO_DEF bool stf_cli_all(const char *stf_target)
   return true;
 }
 
-APOLLO_DEF bool stf_cli_test(
+static bool stf_cli_test(
   const char *stf_target,
   const char *stf_test)
 {
@@ -338,7 +379,7 @@ APOLLO_DEF bool stf_cli_test(
   stf_ModuleExport tests = {0};
   if (!stf_module_load_tests(stf_target, module, &tests)) return false;
 
-  for (uint32_t i=0; i<tests.count; ++i) {
+  for (size_t i=0; i<tests.count; ++i) {
     stf_Test *test = &tests.items[i];
     
     if (strcmp(stf_test, test->name) == 0) 
@@ -350,7 +391,7 @@ APOLLO_DEF bool stf_cli_test(
   return false;
 }
 
-APOLLO_DEF bool stf_run_test(
+static bool stf_run_test(
   const char *stf_target,
   stf_Test *test)
 {
@@ -387,14 +428,11 @@ APOLLO_DEF bool stf_run_test(
 
 #ifdef STF_IMPL_MOD
 
-#define APOLLO_IMPL
-#include "apollo.h"
-
-#define STF_MODULE_EXPORTS(tests)         \
-  stf_ModuleExport stf_module_exports =   \
-  {                                       \
-    sizeof((tests)) / sizeof(stf_Test),   \
-    (tests),                              \
-  }                                       \
+#define STF_MODULE_EXPORTS(tests)                 \
+  STF_DEF stf_ModuleExport stf_module_exports =   \
+  {                                               \
+    sizeof((tests)) / sizeof(stf_Test),           \
+    (tests),                                      \
+  }                                               \
 
 #endif //!STF_IMPL_MOD
